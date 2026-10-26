@@ -37,6 +37,9 @@ Copied from the claude.ai Project on 2026-10-25. Append decisions as they are ma
 - 2026-10-26: **HL006 session detection:** Solaar tests `WAYLAND_DISPLAY` in its own environment; lint treats `XDG_SESSION_TYPE=wayland` or `WAYLAND_DISPLAY` in Heliostat's environment as Wayland, and `GNOME` in `XDG_CURRENT_DESKTOP` as GNOME. Solaar's GNOME extension is not checked.
 - 2026-10-26: **`heliostat lint` options:** `--no-solaar` (skip device checks), `--solaar-show FILE` (device data from saved `solaar show` output, through FakeSolaar), `--solaar-version X.Y.Z`. They make lint usable without devices and reproducible from captured output in bug reports.
 - 2026-10-26: Code or data copied from Solaar keeps Solaar's copyright notices; Heliostat's own authorship is rtk94 only.
+- 2026-10-26: **Simple rule shape (Phase 4):** a trigger, at most one each of Device, Modifiers and Process, then one or more of KeyPress, MouseClick, MouseScroll, Execute, Set. Conditions may come in any order but all come before the actions. `Modifiers: []` is kept as "no modifier held" (Solaar compares the modifier state for equality), distinct from no Modifiers condition. A MouseGesture trigger needs at least one item. Later, Test, Feature, Not/Or/And, MouseProcess, nested rules and any Raw component send a rule to the advanced editor.
+- 2026-10-26: **Simple-rule triggers:** pressed, released, or a mouse gesture. No "any" trigger: Solaar has none, and an Or of pressed and released fires the action twice per click. Such rules stay in the advanced editor.
+- 2026-10-26: **Simple rules keep their written form (Phase 4):** a recognized rule remembers each condition component as loaded and the condition order, and generate() writes an unedited condition back unchanged; actions are the model's own components, which keep their shapes (D2). An edited condition is written in Solaar's saved shape, and a condition added later goes after the existing ones. Order is kept for meaning as well as bytes: a Process condition before the trigger runs on every notification, and on Wayland outside GNOME its None result stops all later rules (HL006). Property tests check that every recognized rule regenerates byte-identically; a conformance test checks that new simple rules load in both pinned versions as held and match Solaar's own save.
 
 ## Open questions
 
@@ -51,6 +54,9 @@ On the dev machine KDE runs Solaar as the systemd user unit `app-solaar@autostar
 
 ### 1.1.20 CLI output (resolved 2026-10-26)
 Captured in `tests/fixtures/solaar/1.1.20/` from the pinned checkout. The forms predicted from source (offline devices print only "Device is offline."; key flags as `raw_xy` etc.) were right. One parser change was needed: 1.1.20 prints the IDs of unnamed features byte-swapped (`unknown:1803 {0318}`), so the parser now takes such IDs from the name. Otherwise the same devices, controls, divertable sets and modes parse from both versions, apart from the 1.1.15 control renames.
+
+### Post-v1 candidates
+- Second simple shape for wheel and crown rules (Feature + Test triggers, e.g. 'when the thumb wheel scrolls up: ...'): the most common reason rules are not simple in Phase 4's stats (8 of 25).
 
 ### Name collisions (resolved, notes kept)
 - PyPI: `heliostat` unregistered. Flathub, Debian, AUR: no results.

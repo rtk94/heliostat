@@ -1,0 +1,43 @@
+%YAML 1.3
+# Rules in the simple shape (src/heliostat/simple/), in the argument and ordering variants Solaar
+# accepts, plus near misses. tests/test_simple.py checks that each rule is or is not recognized as its
+# comment says, and that recognized ones regenerate byte-identically.
+# Control names are ones present in both 1.1.14 and 1.1.20 special_keys.CONTROL.
+---
+# Not simple: an Or of pressed and released runs the actions on both, twice per click.
+- Or:
+  - Key: [Back Button, pressed]
+  - Key: [Back Button, released]
+- KeyPress: [[Control_L, Tab], click]
+...
+---
+# Not simple: the same pair the other way round, with the pressed action left out.
+- Or: [Key: [Forward Button, released], Key: Forward Button]
+- MouseClick: [left, 2]
+...
+---
+# Simple: conditions in a non-canonical order; Modifiers [] means no modifier held.
+- Process: firefox
+- Modifiers: []
+- Key: [Smart Shift, released]
+- Device: 12345678
+- MouseScroll: [0, -3]
+...
+---
+# Simple: a gesture that is only the initiating control (pressed and released without moving).
+- MouseGesture: [Mouse Gesture Button]
+- Execute: [notify-send, gesture tap]
+...
+---
+# Simple: a gesture with a control pressed during it; quoted serial stays a string.
+- MouseGesture: [Mouse Gesture Button, Mouse Up-left, Middle Button]
+- Device: '198E3EB8'
+- Set: [null, divert-keys, Smart Shift, Diverted]
+- KeyPress: [Super_L, depress]
+- KeyPress: [[Super_L], release]
+...
+---
+# Simple: Key pressed with the action left out.
+- Key: Back Button
+- KeyPress: XF86_AudioMute
+...

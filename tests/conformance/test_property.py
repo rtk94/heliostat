@@ -102,8 +102,11 @@ scalars = text | ints | floats | st.booleans()
 device_ids = text | ints
 
 
-def _leaves(canonical: bool):
-    """Leaf components. canonical=True leaves form fields at their defaults (Solaar's saved shape)."""
+def _leaves(canonical: bool, actions_only: bool = False):
+    """Leaf components. canonical=True leaves form fields at their defaults (Solaar's saved shape).
+
+    actions_only=True gives only the action leaves (KeyPress, MouseScroll, MouseClick, Set, Execute).
+    """
     flag = st.just(True) if canonical else st.booleans()
     # Form fields whose default (None, built in code) collapses a one-item list as Solaar's save does.
     form_flag = st.none() if canonical else st.sampled_from([True, False, None])
@@ -152,7 +155,7 @@ def _leaves(canonical: bool):
         listed = st.builds(cls, st.lists(elements, max_size=3), st.sampled_from([True, None]))
         return listed | elements.map(lambda x: cls([x], False))
 
-    return st.one_of(
+    conditions = [
         st.builds(Process, text),
         st.builds(MouseProcess, text),
         st.sampled_from(FEATURES).map(Feature.new),
@@ -167,12 +170,15 @@ def _leaves(canonical: bool):
         st.builds(Active, device_ids),
         st.builds(Device, device_ids),
         st.builds(Host, device_ids),
+    ]
+    actions = [
         keypress(),
         st.builds(MouseScroll, numbers, numbers, st.just(False) if canonical else st.booleans()),
         mouse_click(),
         st.builds(Set, st.none() | device_ids, text, st.lists(st.none() | scalars, min_size=1, max_size=2)),
         single_or_list(Execute, text),
-    )
+    ]
+    return st.one_of(actions if actions_only else conditions + actions)
 
 
 def _components(canonical: bool):
