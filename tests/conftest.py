@@ -1,9 +1,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Guards: no automated test may run the real `solaar`, signal a process, spawn one, or call systemctl."""
 
+import os
+
 import pytest
 
 from heliostat.solaar import cli_client, reload
+
+# GUI tests run headless unless a platform is chosen explicitly.
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 
 def _forbidden(*args, **kwargs):

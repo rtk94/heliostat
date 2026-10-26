@@ -24,7 +24,8 @@ class FakeSolaar:
 
     `controls` maps a device serial to its controls. set_divert() behaves like the real CLI: a control
     that offers Mouse Gestures reads back as DIVERTED_MODE_UNKNOWN for any non-Regular mode, and the
-    mode set is recorded as its saved_mode. Calls are recorded in `divert_calls` and `reload_calls`.
+    mode set is recorded as its saved_mode. Calls are recorded in `divert_calls`, `reload_calls` and
+    `refresh_calls`; refresh() keeps nothing else, as the fake holds no cached reads.
     """
 
     def __init__(
@@ -42,6 +43,7 @@ class FakeSolaar:
         self.reload_strategy = reload_strategy
         self.divert_calls: list[tuple[str | None, str, DivertMode]] = []
         self.reload_calls = 0
+        self.refresh_calls = 0
 
     @classmethod
     def from_show(cls, text: str, **kwargs) -> FakeSolaar:
@@ -67,6 +69,9 @@ class FakeSolaar:
 
     def controls(self, device: Device) -> list[Control]:
         return list(self._controls.get(self._online(device).serial, []))
+
+    def refresh(self) -> None:
+        self.refresh_calls += 1
 
     def set_divert(self, device: Device, control: str, mode: DivertMode) -> None:
         if mode not in SETTABLE_MODES:

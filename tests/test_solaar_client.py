@@ -110,6 +110,67 @@ def test_controls_of_a_device_that_is_not_online():
         client.controls(mouse)
 
 
+def _shows(runner):
+    return sum(argv == SHOW for argv, _, _ in runner.calls)
+
+
+def test_show_runs_once_for_all_devices():
+    client, runner = _client({SHOW: _fixture("show_all.txt")})
+    devices = client.devices()
+    for device in devices:
+        client.controls(device)
+    client.devices()
+    assert len(devices) == 4 and _shows(runner) == 1
+
+
+def test_refresh_reads_show_again():
+    client, runner = _client({SHOW: _fixture("show_all.txt")})
+    client.devices()
+    client.refresh()
+    runner.script[SHOW] = _fixture("show_all_back-gestures.txt")
+    mouse = client.devices()[3]
+    back = next(c for c in client.controls(mouse) if c.name == "Back Button")
+    assert back.saved_mode is DivertMode.MOUSE_GESTURES
+    assert _shows(runner) == 2
+
+
+def test_failed_show_is_not_kept():
+    client, runner = _client({SHOW: (1, "", "boom")})
+    with pytest.raises(SolaarCommandError):
+        client.devices()
+    runner.script[SHOW] = _fixture("show_all.txt")
+    assert len(client.devices()) == 4
+    assert _shows(runner) == 2
+
+
+@pytest.mark.parametrize("works", [True, False])
+def test_set_divert_forgets_show(works):
+    set_back = (*MOUSE, "Back Button", "Mouse Gestures")
+    client, runner = _client(
+        {
+            SHOW: _fixture("show_all.txt"),
+            set_back: _fixture("set_mouse_gestures_signature-m650_back.txt") if works else (1, "", "no"),
+            MOUSE: _fixture("divert_keys_signature-m650_back-gestures.txt"),
+        }
+    )
+    mouse = client.devices()[3]
+    if works:
+        client.set_divert(mouse, "Back Button", DivertMode.MOUSE_GESTURES)
+    else:
+        with pytest.raises(SolaarCommandError):
+            client.set_divert(mouse, "Back Button", DivertMode.MOUSE_GESTURES)
+    client.devices()
+    assert _shows(runner) == 2
+
+
+def test_reload_rules_forgets_show():
+    client, runner = _client({SHOW: _fixture("show_all.txt")})
+    client.devices()
+    client.reload_rules()
+    client.devices()
+    assert _shows(runner) == 2
+
+
 def test_set_divert_runs_config_then_reads_back():
     client, runner = _client(
         {

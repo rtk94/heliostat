@@ -151,6 +151,14 @@ class SolaarClient(Protocol):
 
     def controls(self, device: Device) -> list[Control]: ...
 
+    def refresh(self) -> None:
+        """Forget device data read so far, so the next devices() / controls() reads Solaar again.
+
+        A client may keep what it read between calls; call this before reading Solaar state anew.
+        set_divert() and reload_rules() do it themselves.
+        """
+        ...
+
     def set_divert(self, device: Device, control: str, mode: DivertMode) -> None: ...
 
     def reload_rules(self) -> ReloadResult: ...

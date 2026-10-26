@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Command-line entry point. With no subcommand it prints the version (the GUI comes in a later phase)."""
+"""Command-line entry point. With no subcommand it opens the GUI."""
 
 import argparse
 import os
@@ -25,7 +25,14 @@ def _version(text: str) -> tuple[int, int, int]:
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="heliostat")
+    parser = argparse.ArgumentParser(
+        prog="heliostat",
+        description="With no command, open the rules editor (read-only for now).",
+    )
+    parser.add_argument("--version", action="version", version=f"heliostat {__version__}")
+    parser.add_argument(
+        "--rules", type=Path, metavar="FILE", help=f"rules file the editor opens (default: {default_rules_path()})"
+    )
     sub = parser.add_subparsers(dest="command")
     reload_parser = sub.add_parser(
         "debug-reload",
@@ -152,14 +159,20 @@ def _lint(args) -> int:
     return 1 if errors else 0
 
 
+def _gui(args) -> int:
+    from heliostat.solaar import CliSolaarClient
+    from heliostat.ui.app import run
+
+    return run(args.rules or default_rules_path(), CliSolaarClient())
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(sys.argv[1:] if argv is None else argv)
     if args.command == "debug-reload":
         return _debug_reload(args.strategy)
     if args.command == "lint":
         return _lint(args)
-    print(f"heliostat {__version__}")
-    return 0
+    return _gui(args)
 
 
 if __name__ == "__main__":

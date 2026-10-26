@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import threading
 from collections.abc import Callable, Sequence
 
 from heliostat.solaar.client import (
@@ -21,6 +22,7 @@ from heliostat.solaar.client import (
 from heliostat.solaar.parsers import (
     DIVERT_SETTING,
     ShowDevice,
+    ShowOutput,
     controls_from_show,
     parse_divert_keys,
     parse_set_divert,
@@ -60,6 +62,9 @@ def solaar_env() -> dict[str, str]:
 
 
 class CliSolaarClient:
+    """`solaar show` is slow (it pings every device and reads its features), so its output is read at most
+    once between refresh() calls and shared by devices() and controls(). A failed `show` is not kept."""
+
     def __init__(
         self,
         solaar: str = "solaar",
@@ -71,6 +76,8 @@ class CliSolaarClient:
         self.reload_strategy = reload_strategy
         self.runner = runner
         self.system = system if system is not None else RealSystem()
+        self._show: tuple[str, ShowOutput] | None = None
+        self._show_lock = threading.Lock()
 
     def _run(self, *args: str, timeout: float) -> str:
         argv = (self.solaar, *args)
@@ -90,14 +97,25 @@ class CliSolaarClient:
     def is_running(self) -> bool:
         return bool(self.system.solaar_processes())
 
-    def devices(self) -> list[Device]:
-        return [entry.device for entry in parse_show(self._run("show", timeout=SHOW_TIMEOUT)).devices]
-
-    def controls(self, device: Device) -> list[Control]:
+    def _show_output(self) -> tuple[str, ShowOutput]:
         # Always `show` all devices: `solaar show <serial>` prints the first pairing with that serial,
         # which can be a stale offline pairing on another receiver.
-        raw = self._run("show", timeout=SHOW_TIMEOUT)
-        return controls_from_show(_online_entry(parse_show(raw).devices, device), raw)
+        with self._show_lock:
+            if self._show is None:
+                raw = self._run("show", timeout=SHOW_TIMEOUT)
+                self._show = (raw, parse_show(raw))
+            return self._show
+
+    def refresh(self) -> None:
+        with self._show_lock:
+            self._show = None
+
+    def devices(self) -> list[Device]:
+        return [entry.device for entry in self._show_output()[1].devices]
+
+    def controls(self, device: Device) -> list[Control]:
+        raw, show = self._show_output()
+        return controls_from_show(_online_entry(show.devices, device), raw)
 
     def set_divert(self, device: Device, control: str, mode: DivertMode) -> None:
         """Set one control's divert-keys mode, then read it back.
@@ -109,6 +127,12 @@ class CliSolaarClient:
         if mode not in SETTABLE_MODES:
             raise ValueError(f"{mode} cannot be set")
         target = _cli_device_arg(device)
+        try:
+            self._set_divert(target, control, mode)
+        finally:
+            self.refresh()  # whether or not it worked, the device may have changed
+
+    def _set_divert(self, target: str, control: str, mode: DivertMode) -> None:
         out = self._run("config", target, DIVERT_SETTING, control, mode.value, timeout=CONFIG_TIMEOUT)
         _, set_control, set_mode = parse_set_divert(out)
         if set_control != control or set_mode is not mode:
@@ -120,7 +144,10 @@ class CliSolaarClient:
             raise SolaarError(f"{control!r} reads back as {readback[control].value!r} after setting {mode.value!r}")
 
     def reload_rules(self) -> ReloadResult:
-        return reload_rules(self.reload_strategy, self.version, self.system)
+        try:
+            return reload_rules(self.reload_strategy, self.version, self.system)
+        finally:
+            self.refresh()  # a restarted Solaar applies its saved settings to the devices again
 
 
 def _cli_device_arg(device: Device) -> str:
