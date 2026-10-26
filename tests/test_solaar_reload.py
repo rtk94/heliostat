@@ -23,7 +23,7 @@ ARGV = ("/usr/bin/python3", "/usr/bin/solaar", "--window=hide")
 
 
 def _process(pid=14327, cgroup=UNIT_CGROUP, environ=None):
-    return SolaarProcess(pid, ARGV, 1000, "/home/rich", environ if environ is not None else {"DISPLAY": ":0"}, cgroup)
+    return SolaarProcess(pid, ARGV, 1000, "/home/user", environ if environ is not None else {"DISPLAY": ":0"}, cgroup)
 
 
 class Child:
@@ -140,7 +140,7 @@ def test_signal_restart_outside_systemd():
     assert (result.method, result.unit, result.old_pid, result.new_pid) == ("signal", None, 14327, 30000)
     assert system.calls == [
         ("terminate", 14327),
-        ("spawn", ARGV, "/home/rich", {"DISPLAY": ":0", "XDG_SESSION_TYPE": "x11"}),
+        ("spawn", ARGV, "/home/user", {"DISPLAY": ":0", "XDG_SESSION_TYPE": "x11"}),
     ]
 
 
@@ -250,7 +250,7 @@ def _fake_proc_entry(root, pid, argv, state="S", starttime=777, cgroup=UNIT_CGRO
     (d / "cmdline").write_bytes(b"\0".join(a.encode() for a in argv) + b"\0")
     fields = [state, "1", "1", "1"] + ["0"] * 15 + [str(starttime)] + ["0"] * 10
     (d / "stat").write_text(f"{pid} (solaar) {' '.join(fields)}\n")
-    (d / "environ").write_bytes(b"DISPLAY=:0\0HOME=/home/rich\0")
+    (d / "environ").write_bytes(b"DISPLAY=:0\0HOME=/home/user\0")
     (d / "cgroup").write_text(cgroup)
     (d / "cwd").symlink_to(root)
 
@@ -263,7 +263,7 @@ def test_real_system_reads_a_proc_tree(tmp_path):
     (tmp_path / "self").mkdir()
     system = RealSystem(tmp_path)
     (found,) = system.solaar_processes()
-    assert found == SolaarProcess(14327, ARGV, 777, str(tmp_path), {"DISPLAY": ":0", "HOME": "/home/rich"}, UNIT_CGROUP)
+    assert found == SolaarProcess(14327, ARGV, 777, str(tmp_path), {"DISPLAY": ":0", "HOME": "/home/user"}, UNIT_CGROUP)
     assert not system.has_exited(found)
     (tmp_path / "14327" / "stat").write_text("14327 (solaar) S " + "0 " * 18 + "999\n")  # pid reused
     assert system.has_exited(found)
