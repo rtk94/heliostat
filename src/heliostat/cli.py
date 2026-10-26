@@ -33,12 +33,13 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--rules", type=Path, metavar="FILE", help=f"rules file the editor opens (default: {default_rules_path()})"
     )
-    sub = parser.add_subparsers(dest="command")
-    reload_parser = sub.add_parser(
-        "debug-reload",
-        help="get the running Solaar to reload rules.yaml (restarts it) and print what happened",
-    )
+    sub = parser.add_subparsers(dest="command", metavar="COMMAND")
+    # Developer command: hidden from help, and it restarts Solaar, so it refuses to run without the flag.
+    reload_parser = sub.add_parser("debug-reload")
+    # argparse lists every subparser in --help; drop this one from the listing (it still runs when named).
+    sub._choices_actions = [a for a in sub._choices_actions if a.dest != "debug-reload"]
     reload_parser.add_argument("--strategy", choices=["auto", "remote", "restart"], default="restart")
+    reload_parser.add_argument("--confirm-restart", action="store_true", help=argparse.SUPPRESS)
     lint_parser = sub.add_parser(
         "lint",
         help="check a rules file for problems (read-only); exit status 1 if there are errors",
@@ -169,6 +170,9 @@ def _gui(args) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(sys.argv[1:] if argv is None else argv)
     if args.command == "debug-reload":
+        if not args.confirm_restart:
+            print("heliostat: debug-reload restarts Solaar; pass --confirm-restart to run it.", file=sys.stderr)
+            return 2
         return _debug_reload(args.strategy)
     if args.command == "lint":
         return _lint(args)
