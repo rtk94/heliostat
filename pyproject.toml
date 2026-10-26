@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "heliostat"
+description = "Heliostat for Solaar: a friendlier rules and diversions editor for Logitech devices on Linux"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "GPL-2.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Richard Knepp" }]
+dynamic = ["version"]
+dependencies = [
+    "PyYAML>=6.0",
+    "PySide6>=6.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-qt>=4.4",
+    "hypothesis>=6.100",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+heliostat = "heliostat.cli:main"
+
+[project.urls]
+Repository = "https://github.com/rtk94/heliostat"
+
+[tool.setuptools.dynamic]
+version = { attr = "heliostat.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not conformance'"
+markers = [
+    "conformance: runs pinned Solaar checkouts in subprocesses (slow; run with `make conformance`)",
+]

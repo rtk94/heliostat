@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+htmlcov/
+
+# Pinned Solaar checkouts for conformance tests (tools/fetch_solaar.sh)
+.solaar/
+
+# Editors
+.idea/
+.vscode/
