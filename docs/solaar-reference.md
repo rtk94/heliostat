@@ -79,6 +79,26 @@ Actions: KeyPress (X11 keysym names, optional click/depress/release), MouseScrol
 
 Plus `Rule` (a nested sequence). Process and MouseProcess do not work on Wayland except GNOME with the Solaar GNOME extension.
 
+## CLI output and device matching (verified 2026-10-26 against both pinned tags)
+
+- `divert-keys` is read by `DivertKeys.rw_class.read`, which returns 1 if the control's mapping flags include `diverted`, else 0. Mouse Gestures (2) and Sliding DPI (3) live only in Solaar (the gesture/sliding handlers start in the process that does the write) and in config.yaml, so a fresh CLI process reads them back as Diverted.
+- The modes Solaar offers per control (`DivertKeys.validator_class.build`): only REPROG_CONTROLS_V4 controls flagged divertable and not virtual; raw-XY controls add Mouse Gestures, and Sliding DPI too if the device has ADJUSTABLE_DPI (0x2201). Same in 1.1.14 and 1.1.20.
+- `solaar show` prints each setting twice inside its feature: `<label> (saved): ...` from config.yaml (the persister) and `<label>        : ...` read live from the device.
+- `_find_device` lowercases its argument and matches a device's serial, codename or kind exactly, or a substring of its name; unit IDs do not match. `show <dev>` prints the first match (possibly an offline pairing); `config` pings each match and uses the first online one.
+- With a value, `solaar config` writes the device, prints `Setting divert-keys of <name> key NamedInt(cid, 'control') to NamedInt(n, 'mode')`, and forwards the command to a running GUI (which applies and saves it); with no GUI it saves to config.yaml itself.
+- Setting labels and mode names go through gettext (`_("Regular")`), so output is localized unless `LANGUAGE`/`LC_ALL` select C.
+- Errors exit 1 with `solaar: error: <traceback>` on stderr.
+- 1.1.20 `show` differences, confirmed by the captured fixtures (`tests/fixtures/solaar/1.1.20/`, same devices as 1.1.14):
+  - An offline device prints only `N: name` and `Device is offline.` (no codename, serial, kind or WPID).
+  - Key flags print as lower-case enum names in bit order (`analytics_key_events, divertable, reprogrammable, fn_sensitive, is_fn`); 1.1.14 prints `is FN, FN sensitive, reprogrammable, divertable, analytics key events`. Bit 0x800 is `unknown:000800` in 1.1.14 and `raw_wheel` in 1.1.20.
+  - Features Solaar has no name for print their ID byte-swapped: `unknown:1803 {0318}` (show.py reads str features with `byteorder="little"`). Named features print correctly. Some features gained names (`BLE PRO PRE PAIRING` {1816}, `ENABLE HIDDEN FEATURES` {1E00}) and lost their `internal, hidden` flags.
+  - Battery status prints as the enum (`Battery: 95%, BatteryStatus.DISCHARGING.`; 1.1.14: `95%, 0.`).
+  - Control names follow the 1.1.15 renames, in `show`, `config` and `divert-keys` alike. On the MX Mechanical: Voice Dictation -> Dictation, Open Emoji Panel -> Emoji, Snipping Tool -> Screen Capture, Previous Fn -> Previous Track, Play/Pause Fn -> Play/Pause, Next Fn -> Next Track, Mute Fn -> Mute Sound, Volume Down Fn -> Volume Down, Volume Up Fn -> Volume Up, Lock PC -> Screen Lock.
+  - Some setting descriptions changed (dpi: "Mouse movement sensitivity May need Onboard Profiles set to Disable to be effective."). Setting names and labels are the same.
+  - Not seen on these devices, from source only: Centurion receivers add `Protocol : Centurion` and dongle-feature lines.
+- Running a newer Solaar rewrites config.yaml even for read-only CLI commands (`show`, `config` with no value): 1.1.20 against a 1.1.14 config.yaml changed the version stamp from `1.1.14-4` to `1.1.20` and restructured the `_absent` setting lists. Never point a newer Solaar (e.g. a conformance checkout) at the user's real `~/.config/solaar`.
+- Solaar's GUI installs a SIGTERM handler that calls `sys.exit(0)`. A process is the GUI exactly when its argv has no CLI action (`show`, `probe`, `profiles`, `config`, `pair`, `unpair`) after Solaar's own options.
+
 ## Useful commands
 
 - `solaar show` lists devices, including the "Reprogrammable keys" section with divertable controls.

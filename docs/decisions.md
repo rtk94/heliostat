@@ -25,6 +25,10 @@ Copied from the claude.ai Project on 2026-10-25. Append decisions as they are ma
 - 2026-10-26: **Formatting tests restructured:** byte-for-byte comparison (modulo D1) only against Solaar-canonical input: Solaar's own re-save of a fixture, and rules Heliostat builds. As-written fixtures are covered by semantic equality on both versions plus idempotence (dumps of load of dumps output is unchanged). On 1.1.14, D1 accepts Heliostat's preserved spaced Feature name where Solaar's save wrote None; the semantic test proves both load as None there.
 - 2026-10-26: **Valid YAML that aborts Solaar's load** (e.g. `Feature: [CROWN]`, `Rule: 5`, a null document, `Test: mouse-up`) stays editable in Heliostat; lint HL009 reports it as an error: Solaar stops loading at that rule, and its next save drops everything after it.
 - 2026-10-26: **Lint HL010 solaar-save-hazard** (warning): a rule contains a form Solaar's own save would damage: a one-item-list collapse that changes meaning or makes the file unloadable, an invalid argument Solaar replaces with a data-deleting fallback, or an unknown component that makes Solaar's save fail.
+- 2026-10-26: **Diversion mode readback (Phase 2):** Solaar's CLI reads `divert-keys` from the device's divert bit alone, so Mouse Gestures and Sliding DPI read back as Diverted. `controls()` reports a live Diverted on a control that offers gesture modes as `diverted (gesture mode unknown)`, never a guess. The mode Solaar has stored in its config.yaml (the "(saved)" line of `solaar show`) is reported separately as `saved_mode`.
+- 2026-10-26: **Restart procedure (Phase 2):** find the user's single Solaar GUI process in /proc. If its cgroup leaf is a systemd user `.service` whose MainPID is that process, run `systemctl --user restart <unit>`. If the process is not in a user service, SIGTERM it, wait up to 10 s, then relaunch it with the same argv, cwd and environment, detached. Never SIGKILL; never restart a unit whose main process is something else. Verified on the dev machine 2026-10-26: `heliostat debug-reload` restarted via systemd, `app-solaar@autostart.service`, pid 14327 -> 1314044 with the same argv (`/usr/bin/python3 /usr/bin/solaar --window=hide`), and both devices came back online.
+- 2026-10-26: **CLI conventions (Phase 2):** `solaar` runs with `LANGUAGE=C LC_ALL=C.UTF-8` (setting labels and mode names are translated). Devices are read from `solaar show` (all) and the online pairing is picked by serial, because `solaar show <serial>` prints the first pairing with that serial, which can be a stale offline one. `solaar config` is addressed by serial (it skips offline pairings).
+- 2026-10-26: **HL001 mode check uses saved_mode:** the "(saved)" line of `solaar show` names the exact mode Solaar holds in config.yaml (captured in `tests/fixtures/solaar/1.1.14/show_all_back-gestures.txt`: saved Mouse Gestures, live Diverted). HL001 can check that a MouseGesture rule's control has `saved_mode` Mouse Gestures, provided the live mode is diverted (live Regular means the device is not diverted, whatever was saved).
 - 2026-10-26: **Attribution:** rtk94 is the only author and contributor anywhere: commits, PRs, and files, for Heliostat and upstream Solaar contributions. No AI co-author trailers or "Generated with" lines.
 
 ## Open questions
@@ -35,8 +39,11 @@ Long-lived concurrent listening for live button capture is unverified. Solaar's 
 ### Upstream reload PR
 Search existing pwr-Solaar/Solaar issues before opening one (not possible during planning). Agree the command shape with the maintainers before coding.
 
-### Restart fallback
-How Solaar is launched on the dev machine (KDE autostart `.desktop` vs systemd user unit) is unverified. Proven or redesigned at the Phase 2 checkpoint.
+### Restart fallback (resolved 2026-10-26)
+On the dev machine KDE runs Solaar as the systemd user unit `app-solaar@autostart.service`, generated from `/etc/xdg/autostart/solaar.desktop`. The restart procedure (see Decisions) was verified with a manual `heliostat debug-reload` run.
+
+### 1.1.20 CLI output (resolved 2026-10-26)
+Captured in `tests/fixtures/solaar/1.1.20/` from the pinned checkout. The forms predicted from source (offline devices print only "Device is offline."; key flags as `raw_xy` etc.) were right. One parser change was needed: 1.1.20 prints the IDs of unnamed features byte-swapped (`unknown:1803 {0318}`), so the parser now takes such IDs from the name. Otherwise the same devices, controls, divertable sets and modes parse from both versions, apart from the 1.1.15 control renames.
 
 ### Name collisions (resolved, notes kept)
 - PyPI: `heliostat` unregistered. Flathub, Debian, AUR: no results.

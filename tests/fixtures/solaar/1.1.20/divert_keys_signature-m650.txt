@@ -1,0 +1,3 @@
+# Key/Button Diversion
+# Make the key or button send HID++ notifications (Diverted) or initiate Mouse Gestures or Sliding DPI
+divert-keys = {Middle Button:Regular, Back Button:Regular, Forward Button:Regular}

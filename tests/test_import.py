@@ -8,5 +8,5 @@ def test_version_is_set():
 
 
 def test_cli_prints_version(capsys):
-    assert main() == 0
+    assert main([]) == 0
     assert capsys.readouterr().out.strip() == f"heliostat {heliostat.__version__}"

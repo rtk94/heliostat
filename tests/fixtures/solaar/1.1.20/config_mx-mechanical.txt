@@ -1,0 +1,29 @@
+MX Mechanical (MX MCHNCL) [B366:AAAA0001]
+
+# Backlight
+# Illumination level on keyboard.  Changes made are only applied in Manual mode.
+#   possible values: one of [ Enabled, Disabled ], or higher/lower/highest/max/lowest/min
+backlight = Disabled
+
+# Swap Fx function
+# When set, the F1..F12 keys will activate their special function, and you must hold the FN key to activate their standard function.  When unset, the F1..F12 keys will activate their standard function, and you must hold the FN key to activate their special function.
+#   possible values: on/true/t/yes/y/1 or off/false/f/no/n/0 or Toggle/~
+fn-swap = False
+
+# Key/Button Diversion
+# Make the key or button send HID++ notifications (Diverted) or initiate Mouse Gestures or Sliding DPI
+divert-keys = {Calculator:Regular, Show Desktop:Regular, Screen Lock:Regular, Brightness Down:Regular, Brightness Up:Regular, MultiPlatform Search:Regular, Backlight Down:Regular, Backlight Up:Regular, Previous Track:Regular, Play/Pause:Regular, Next Track:Regular, Mute Sound:Regular, Volume Down:Regular, Volume Up:Regular, Dictation:Regular, Emoji:Regular, Screen Capture:Regular, Grave Accent:Regular, Tab Key:Regular, Caps Lock:Regular, Left Shift:Regular, Left Control:Regular, Left Option/Start:Regular, Left Command/Alt:Regular, Right Command/Alt:Regular, Right Option/Start:Regular, Right Control:Regular, Right Shift:Regular, Insert:Regular, Delete:Regular, Home:Regular, End:Regular, Page Up:Regular, Page Down:Regular, Mute Microphone:Regular, Backslash:Regular}
+
+# Disable keys
+# Disable specific keyboard keys.
+disable-keyboard-keys = {Caps Lock:False, Num Lock:False, Scroll Lock:False, Insert:False, Win:False}
+
+# Set OS
+# Change keys to match OS.
+#   possible values: one of [ Windows, MacOS, iOS ], or higher/lower/highest/max/lowest/min
+multiplatform = Windows
+
+# Change Host
+# Switch connection to a different host
+#   possible values: one of [ 1:host-a, 2:host-a, 3:host-b ], or higher/lower/highest/max/lowest/min
+change-host = 2:host-a
