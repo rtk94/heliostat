@@ -27,7 +27,7 @@ def _version(text: str) -> tuple[int, int, int]:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="heliostat",
-        description="With no command, open the rules editor (read-only for now).",
+        description="With no command, open the rules editor.",
     )
     parser.add_argument("--version", action="version", version=f"heliostat {__version__}")
     parser.add_argument(

@@ -129,6 +129,34 @@ def _dump_document(rule: Rule | Raw) -> Any:
     return _sequence([_dump_component(c) for c in rule.components])
 
 
+def component_text(component: Component) -> str:
+    """One component as YAML text in Solaar's style, for editing (`Key: [Back Button, pressed]`)."""
+    return _dump_one(_dump_component(component))
+
+
+def rule_text(rule: Rule | Raw) -> str:
+    """A top-level rule as the YAML text of its document, for editing (a block list of components)."""
+    return _dump_one(_dump_document(rule))
+
+
+def _dump_one(value: Any) -> str:
+    text = yaml.dump(value, Dumper=_Dumper, default_flow_style=False)
+    return text.removesuffix("...\n")  # PyYAML ends a bare top-level scalar with a document end marker
+
+
+def loads_value(text: str) -> Any:
+    """Parse YAML text that holds one value (one document) with the loader Solaar uses."""
+    try:
+        documents = list(yaml.safe_load_all(text))
+    except yaml.YAMLError as e:
+        mark = getattr(e, "problem_mark", None) or getattr(e, "context_mark", None)
+        line, column = (mark.line + 1, mark.column + 1) if mark is not None else (None, None)
+        raise RulesParseError(_one_line(e), line, column, 0) from e
+    if len(documents) > 1:
+        raise RulesParseError("more than one YAML document", None, None, 1)
+    return documents[0] if documents else None
+
+
 def dumps(ruleset: RuleSet) -> str:
     """Serialize like Solaar's `_save_config_rule_file`."""
     documents = [_dump_document(r) for r in ruleset.rules]

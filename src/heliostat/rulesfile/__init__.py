@@ -1,6 +1,36 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Reading and serializing rules.yaml. Writing it to disk safely comes in a later phase."""
+"""Reading, serializing and safely writing rules.yaml."""
 
-from heliostat.rulesfile.yaml_io import RulesParseError, dumps, load, loads
+from heliostat.rulesfile.disk import (
+    BACKUPS_KEPT,
+    ExternalChange,
+    SaveResult,
+    backups,
+    read_bytes,
+    save,
+)
+from heliostat.rulesfile.yaml_io import (
+    RulesParseError,
+    component_text,
+    dumps,
+    load,
+    loads,
+    loads_value,
+    rule_text,
+)
 
-__all__ = ["RulesParseError", "dumps", "load", "loads"]
+__all__ = [
+    "BACKUPS_KEPT",
+    "ExternalChange",
+    "RulesParseError",
+    "SaveResult",
+    "backups",
+    "component_text",
+    "dumps",
+    "load",
+    "loads",
+    "loads_value",
+    "read_bytes",
+    "rule_text",
+    "save",
+]

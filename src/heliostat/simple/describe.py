@@ -95,6 +95,11 @@ def describe(rule: SimpleRule, device_names: Mapping[Any, str] | None = None) ->
     return f"When {' '.join(when)}: {actions}"
 
 
+def describe_action(action: Component, device_names: Mapping[Any, str] | None = None) -> str:
+    """One simple action in words, e.g. "press Ctrl+Tab"."""
+    return _action(action, device_names)
+
+
 def _device(device: Any, device_names: Mapping[Any, str] | None) -> str:
     if device_names is not None:
         name = device_names.get(device)

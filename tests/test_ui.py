@@ -204,7 +204,8 @@ def test_missing_rules_file(qtbot, open_window, tmp_path):
     window = open_window(tmp_path / "rules.yaml", _fake(), start=False)
     assert "No rules file" in window.banner.text()
     assert window.rule_list.topLevelItemCount() == 0
-    assert window.problems == []
+    assert _codes(window) == []
+    assert window.save_action.isEnabled()  # saving creates the file
 
 
 def test_cli_without_command_opens_the_gui(monkeypatch, tmp_path):
