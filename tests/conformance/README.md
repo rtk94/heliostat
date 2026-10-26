@@ -16,6 +16,11 @@ make conformance          # tools/fetch_solaar.sh, then pytest -m conformance
   - `roundtrip <in.yaml> <out.yaml>`: `diversion._load_rule_config`, set `diversion.rules`, then
     `diversion._save_config_rule_file`.
   - `dump-data <in.yaml>`: JSON of `[r.data() for r in <user rules>]`.
+  - `probe <in.yaml>...`: for each file, load, `data()`, save (as Solaar's editor does; exceptions that escape
+    the save are caught), then reload, `data()` and save again; JSON of each step. Writes only next to the inputs.
+  - `evaluate <in.yaml> <control>`: load, then run `evaluate_rules` for a press of `<control>` as a
+    REPROG_CONTROLS_V4 notification would deliver it. KeyPress actions are recorded instead of run; any other
+    action makes it refuse to run. JSON of the KeyPress keys in the order they ran.
 
   Exit 0 on success, 1 if Solaar logged any ERROR (Solaar catches load and save exceptions and only logs
   them, so this is the only way to notice a partial load), 2 on bad usage or an unsafe environment. It
@@ -34,6 +39,10 @@ make conformance          # tools/fetch_solaar.sh, then pytest -m conformance
 - `test_property.py`: hypothesis-generated rule trees (shorthand and canonical argument shapes), dumped by
   Heliostat; Solaar must load them as Heliostat holds them, and for canonical shapes Solaar's save must equal
   `dumps` up to the deviations. About 25 s.
+- `test_lint_claims.py` (Phase 3): lint's claims about Solaar. `analysis.solaar_model.load_abort` must agree with
+  real Solaar on every document in `LOAD_CASES` (HL009); `save_hazards` must report exactly the `SAVE_CASES` where
+  Solaar's save damages the rule, with the stated damage (HL010); `EVALUATION_CASES` show where Solaar stops
+  processing (after a rule that ends in an action, or at a condition that returns None).
 - `deviations.py`: the documented differences from Solaar's save (D1, D2; see `docs/decisions.md`).
 
 ### How `roundtrip` loads and saves
@@ -104,6 +113,9 @@ runner's stderr. Only ERRORs make it exit non-zero.
   `Execute: [5]`). Strict xfail on both tags.
 - `load-aborts.yaml`: valid YAML whose second rule (`MouseScroll: 5`) makes Solaar's load raise; Solaar keeps
   1 of 3 rules. Strict xfail on both tags.
+
+- `lint-cases.yaml`, `lint-clean.yaml` (Phase 3): rules that trigger lint checks HL001-HL006, and near misses that
+  must trigger nothing, with the device data in `tests/fixtures/solaar/1.1.14/show_all_back-gestures.txt`.
 
 ## Known Solaar behavior the fixtures pin down
 

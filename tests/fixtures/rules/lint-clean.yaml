@@ -1,0 +1,43 @@
+%YAML 1.3
+# Near misses for every lint check: with the device data in
+# tests/fixtures/solaar/1.1.14/show_all_back-gestures.txt on Solaar 1.1.14, outside Wayland, lint must
+# report nothing here. tests/test_analysis.py checks that.
+---
+# Key fires in every non-Regular mode, Mouse Gestures included (HL001).
+- Key: [Back Button, pressed]
+- Modifiers: Control
+- KeyPress: XF86_AudioPlay
+...
+---
+# Same trigger as rule 1 but different modifiers: not a duplicate (HL003), not shadowed (HL004).
+- Key: [Back Button, pressed]
+- Modifiers: [Control, Shift]
+- KeyPress: XF86_AudioNext
+...
+---
+# Ends in a condition, so it does not stop processing: rule 4 still runs (HL004).
+- Key: [Back Button, released]
+- KeyPress: XF86_AudioMute
+- Test: crown_tap
+...
+---
+- Key: [Back Button, released]
+- Feature: CROWN
+- KeyPress: XF86_AudioMute
+...
+---
+# Depress and release in the same rule, the release in a nested rule (HL005).
+- MouseGesture: [Back Button, Mouse Down]
+- KeyPress: [Super_L, depress]
+- Rule:
+  - KeyPress: [[Super_L], release]
+- MouseClick: [left, depress]
+- Later: [0.5, MouseClick: [left, release]]
+...
+---
+# Single-word and underscore Feature names, a Device condition with a quoted serial (HL007, HL008, HL010).
+- Feature: CROWN
+- Device: '12345678'
+- Test: crown_tap
+- KeyPress: XF86_AudioMute
+...

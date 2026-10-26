@@ -14,6 +14,11 @@ Subcommands:
     roundtrip <in.yaml> <out.yaml>   load with diversion._load_rule_config, save with
                                      diversion._save_config_rule_file
     dump-data <in.yaml>              print JSON of [r.data() for r in <user rules>]
+    probe <in.yaml>...               for each file: load, data(), save, reload, data(), save again;
+                                     print JSON of what happened at each step (for lint's claims)
+    evaluate <in.yaml> <control>     load, then evaluate the rules for a press of <control> as a
+                                     REPROG_CONTROLS_V4 notification would; KeyPress actions are
+                                     recorded instead of run. Print JSON of the KeyPress keys run
 
 Exit status: 0 on success, 1 if Solaar logged an error (it swallows load and save exceptions and
 only logs them), 2 on bad usage or an unsafe environment.
@@ -91,11 +96,103 @@ def dump_data(diversion, in_path):
     return True
 
 
+def _load_counting(diversion, errors, path):
+    before = errors.count
+    loaded = diversion._load_rule_config(path)
+    return loaded, errors.count - before
+
+
+def _data(diversion, loaded):
+    try:
+        return [r.data() for r in _user_rules(diversion, loaded)], None
+    except Exception as e:
+        return None, f"{type(e).__name__}: {e}"
+
+
+def _save(diversion, errors, loaded, path):
+    """Save as Solaar's editor does. Exceptions from data() escape _save_config_rule_file; others it logs."""
+    diversion.rules = loaded
+    before = errors.count
+    try:
+        ok = diversion._save_config_rule_file(path)
+    except Exception as e:
+        return False, f"{type(e).__name__}: {e}"
+    return ok and errors.count == before, None
+
+
+def probe(diversion, errors, *paths):
+    results = []
+    for in_path in paths:
+        out = in_path + ".saved"
+        shutil.copyfile(in_path, out)
+        original = open(in_path).read()
+        loaded, load_errors = _load_counting(diversion, errors, out)
+        data, data_error = _data(diversion, loaded)
+        saved_ok, save_error = _save(diversion, errors, loaded, out)
+        result = {
+            "load_errors": load_errors,
+            "kept": len(_user_rules(diversion, loaded)),
+            "data": data,
+            "data_error": data_error,
+            "save_ok": saved_ok,
+            "save_error": save_error,
+            "saved_text": open(out).read(),
+            "file_unchanged": open(out).read() == original,
+        }
+        if saved_ok:
+            again = out + ".2"
+            shutil.copyfile(out, again)
+            reloaded, reload_errors = _load_counting(diversion, errors, again)
+            result["reload_errors"] = reload_errors
+            result["reload_data"], result["reload_data_error"] = _data(diversion, reloaded)
+            result["resave_ok"], result["resave_error"] = _save(diversion, errors, reloaded, again)
+        results.append(result)
+    json.dump(results, sys.stdout, indent=1)
+    sys.stdout.write("\n")
+    return True
+
+
+def evaluate(diversion, in_path, control):
+    import types
+
+    ran = []
+
+    def record(self, feature, notification, device, last_result):
+        ran.append(list(self.key_names))
+        return None
+
+    def components(c):
+        yield c
+        for child in getattr(c, "components", ()):
+            yield from components(child)
+        if isinstance(c, diversion.Not):
+            yield from components(c.component)
+
+    loaded = diversion._load_rule_config(in_path)
+    for c in components(loaded):
+        # Only KeyPress is safe to "run" (it is recorded, not sent); the others would act on the system.
+        if isinstance(c, diversion.Action) and not isinstance(c, diversion.KeyPress):
+            _die(f"evaluate only allows KeyPress actions, found {c}")
+    diversion.KeyPress.evaluate = record
+    diversion.rules = loaded
+    diversion.key_down, diversion.key_up = diversion.CONTROL[control], None
+    notification = types.SimpleNamespace(address=0x00, data=bytes(16))
+    device = types.SimpleNamespace(unitId="AAAA0002", serial="AAAA0002", codename="M650", name="Mouse")
+    diversion.evaluate_rules(diversion.SupportedFeature.REPROG_CONTROLS_V4, notification, device)
+    json.dump(ran, sys.stdout)
+    sys.stdout.write("\n")
+    return True
+
+
 def main(argv):
     if len(argv) == 3 and argv[0] == "roundtrip":
         command, args = roundtrip, argv[1:]
     elif len(argv) == 2 and argv[0] == "dump-data":
         command, args = dump_data, argv[1:]
+    elif len(argv) >= 2 and argv[0] == "probe":
+        command, args = probe, argv[1:]
+    elif len(argv) == 3 and argv[0] == "evaluate":
+        command, args = evaluate, argv[1:]
     else:
         print(__doc__, file=sys.stderr)
         return 2
@@ -107,6 +204,8 @@ def main(argv):
     logging.getLogger().addHandler(errors)
 
     diversion = _import_diversion()
+    if command is probe:
+        return 0 if probe(diversion, errors, *args) else 1  # errors are reported per file
     ok = command(diversion, *args)
     if not ok or errors.count:
         return 1

@@ -1,0 +1,52 @@
+%YAML 1.3
+# Rules that trigger lint checks HL001-HL006 against the device data in
+# tests/fixtures/solaar/1.1.14/show_all_back-gestures.txt on Solaar 1.1.14 (Signature M650 with Back
+# Button set to Mouse Gestures, every other control Regular), and for HL006 a Wayland session outside
+# GNOME. tests/test_analysis.py lists the problems expected for each rule.
+---
+# HL001: Forward Button is not diverted.
+- Key: [Forward Button, pressed]
+- KeyPress: XF86_AudioPlay
+...
+---
+# No problem: Back Button is in Mouse Gestures mode, so this gesture works.
+- MouseGesture: [Back Button, Mouse Up]
+- KeyPress: XF86_AudioRaiseVolume
+...
+---
+# HL001: Middle Button is not set to Mouse Gestures.
+- MouseGesture: [Middle Button, Mouse Down]
+- KeyPress: XF86_AudioLowerVolume
+...
+---
+# HL002: Solaar 1.1.20's name for the control 1.1.14 calls Voice Dictation.
+- Key: Dictation
+- KeyPress: XF86_AudioMicMute
+...
+---
+# HL002: a control name Solaar knows but no connected device has.
+- Key: [Smart Shift, pressed]
+- KeyPress: XF86_AudioMute
+...
+---
+# HL003 (and HL001): the same trigger and conditions as rule 1, which always ends in an action.
+- Key: [Forward Button, pressed]
+- KeyPress: XF86_AudioNext
+...
+---
+# HL004: rule 2 has a subset of these conditions and always ends in an action.
+- MouseGesture: [Back Button, Mouse Up]
+- Device: AAAA0002
+- KeyPress: XF86_AudioNext
+...
+---
+# HL005: Super_L is pressed and never released.
+- Key: [Back Button, released]
+- KeyPress: [Super_L, depress]
+...
+---
+# HL006 on Wayland outside GNOME.
+- Key: [Back Button, pressed]
+- Process: konsole
+- KeyPress: [[Control_L, c], click]
+...
