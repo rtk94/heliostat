@@ -1,0 +1,38 @@
+%YAML 1.3
+---
+- Key: [M2, pressed]
+- Set: [198E3EB8, dpi, 3000]
+- Execute: [notify-send, Increased mouse speed]
+...
+---
+- Key: [Host Switch Channel 2, pressed]
+- Set: [43DAF041, change-host, 1]
+- Set: [198E3EB8, change-host, 1]
+- Execute: [notify-send, Switched to host 2]
+...
+---
+- MouseGesture: [Mouse Up, Mouse Down]
+- Execute: [notify-send, Locking]
+- Execute: xflock4
+...
+- Feature: CROWN
+- Process: quodlibet
+- Rule: [ Test: crown_start_press, KeyPress: XF86_AudioMute ]
+- Rule: [ Test: crown_pressed, Test: crown_right_ratchet, KeyPress: XF86_AudioNext ]
+- Rule: [ Test: crown_pressed, Test: crown_left_ratchet, KeyPress: XF86_AudioPrev ]
+- Rule: [ Test: crown_right_ratchet, KeyPress: XF86_AudioRaiseVolume ]
+- Rule: [ Test: crown_left_ratchet, KeyPress: XF86_AudioLowerVolume ]
+...
+---
+- Feature: THUMB WHEEL
+- Rule: [ Modifiers: Control, Test: thumb_wheel_up, MouseScroll: [-2, 0] ]
+- Rule:
+  - Modifiers: Control
+  - Test: thumb_wheel_down
+  - MouseScroll: [-2, 0]
+- Rule: [ Or: [ Test: thumb_wheel_up, Test: thumb_wheel_down ], MouseScroll: [-1, 0] ]
+...
+---
+- Feature: LOWRES WHEEL
+- Rule: [ Or: [ Test: lowres_wheel_up, Test: lowres_wheel_down ], MouseScroll: [0, 2] ]
+...

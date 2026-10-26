@@ -1,0 +1,74 @@
+%YAML 1.3
+# Synthetic rules file using each of the 24 Solaar rule component types at least once.
+# Argument shapes checked against .solaar/1.1.14/lib/logitech_receiver/diversion.py.
+# Control names are ones present in both 1.1.14 and 1.1.20 special_keys.CONTROL.
+# Comments are dropped by Solaar's save; they exist only for readers of this fixture.
+---
+# Key, name form; Set with a string device id and an all-digit device serial (loads as int).
+- Key: Back Button
+- Modifiers: Control
+- Device: 12345678
+- Set: [12345678, dpi, 1600]
+- Execute: [notify-send, DPI 1600]
+...
+---
+# Key, [name, action] form; multi-modifier list; single-item list that Solaar collapses to a scalar.
+- Key: [Forward Button, released]
+- Modifiers: [Shift, Control]
+- KeyIsDown: Back Button
+- KeyPress: [[Control_L, Tab], click]
+...
+---
+# MouseGesture, initiating key plus movements; Process, Host, Active.
+- MouseGesture: [Mouse Gesture Button, Mouse Up, Mouse Left]
+- Process: firefox
+- Host: workstation
+- Active: 198E3EB8
+- KeyPress: [Control_L, t]
+...
+---
+# MouseGesture single movement (scalar form); MouseProcess; MouseClick forms.
+- MouseGesture: Mouse Down
+- MouseProcess: konsole
+- MouseClick: [left, 2]
+- MouseClick: middle
+- MouseClick: [right, click]
+...
+---
+# Feature, Report, Test (scalar and with parameter), TestBytes (bit and range forms), MouseScroll.
+- Feature: CROWN
+- Report: 0
+- Or:
+  - Test: crown_tap
+  - Test: [thumb_wheel_up, 10]
+  - TestBytes: [0, 1, 128]
+  - TestBytes: [2, 4, -10, 10]
+- MouseScroll: [0, 1]
+- MouseScroll: [-1.5, 0]
+...
+---
+# Not (single component and single-item list), And, Setting with a null device and a key.
+- Not:
+    Modifiers: [Alt]
+- Not: [Process: kwin]
+- And:
+  - Setting: [null, divert-keys, Smart Shift, Diverted]
+  - Setting: [MX Master 3, hires-smooth-invert, true]
+- KeyPress: XF86_AudioMute
+...
+---
+# Nested Rules, Later (int and float delay, nested Later), Execute scalar form.
+- Key: [Smart Shift, pressed]
+- Rule:
+  - Modifiers: Super
+  - Rule:
+    - Test: [crown_pressed]
+    - Execute: xflock4
+  - KeyPress: [Super_L, depress]
+- Rule:
+  - Later:
+    - 2
+    - KeyPress: [Super_L, release]
+    - Later: [0.5, Execute: [notify-send, done]]
+- Set: [null, smart-shift, 20]
+...

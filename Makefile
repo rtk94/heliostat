@@ -21,7 +21,8 @@ fmt:
 	$(BIN)/ruff format .
 
 conformance:
-	@echo "not yet implemented (Phase 1a)"
+	tools/fetch_solaar.sh
+	$(BIN)/pytest -m conformance
 
 clean:
 	rm -rf build dist *.egg-info src/*.egg-info .pytest_cache .ruff_cache
