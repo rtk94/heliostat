@@ -15,7 +15,11 @@ Read CLAUDE.md first. Precondition: `tests/fixtures/solaar/<version>/` contains 
 3. `reload_rules()`: strategy setting `auto | remote | restart`, default `restart`. The remote command doesn't exist upstream yet; add a version-gate constant set to `None` and make `auto` fall back to `restart` while it is `None`.
    Restart: find the running Solaar process, record its argv, SIGTERM it, wait (bounded), then relaunch with the same argv, detached (new session, no inherited stdio). If Solaar runs under a systemd user unit, use `systemctl --user restart <unit>` instead. Report exactly what happened in `ReloadResult`.
 
+   Known on the dev machine (2026-10-26): Solaar runs as the systemd user unit `app-solaar@autostart.service` (KDE generates it from `/etc/xdg/autostart/solaar.desktop`), command `/usr/bin/solaar --window=hide`. Detect this generally (find the unit owning the Solaar PID, e.g. via `systemctl --user status <pid>`) rather than hard-coding the unit name, and prefer `systemctl --user restart <unit>` when a unit owns the process.
+
 4. `FakeSolaar` implementing the same Protocol, for tests in later phases.
+
+Note on diversion modes: `tests/fixtures/solaar/1.1.14/README.md` records that after setting a control to `Mouse Gestures`, a separate `solaar config` read reports it as `Diverted`. Confirm the cause in the pinned source. If the CLI cannot distinguish the two, `controls()` must report the mode as "diverted (gesture mode unknown)" rather than guessing, and say so in the checkpoint.
 
 5. A `heliostat debug-reload` subcommand that calls `reload_rules()` on the real system and prints the `ReloadResult`. Do NOT run it yourself; I run it by hand.
 

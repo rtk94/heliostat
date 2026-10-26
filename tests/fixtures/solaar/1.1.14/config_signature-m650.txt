@@ -1,0 +1,19 @@
+Signature M650 Mouse (Logi M650) [B02A:AAAA0002]
+
+# Scroll Wheel Diversion
+# Make scroll wheel send LOWRES_WHEEL HID++ notifications (which trigger Solaar rules but are otherwise ignored).
+#   possible values: on/true/t/yes/y/1 or off/false/f/no/n/0 or Toggle/~
+lowres-scroll-mode = False
+
+# Sensitivity (DPI)
+# Mouse movement sensitivity
+#   possible values: one of [ 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000 ], or higher/lower/highest/max/lowest/min
+dpi = 1000
+
+# Key/Button Actions
+# Change the action for the key or button.  Overridden by diversion. Changing important actions (such as for the left mouse button) can result in an unusable system.
+reprogrammable-keys = {Middle Button:Mouse Middle Button, Back Button:Mouse Back Button, Forward Button:Mouse Forward Button}
+
+# Key/Button Diversion
+# Make the key or button send HID++ notifications (Diverted) or initiate Mouse Gestures or Sliding DPI
+divert-keys = {Middle Button:Regular, Back Button:Regular, Forward Button:Regular}

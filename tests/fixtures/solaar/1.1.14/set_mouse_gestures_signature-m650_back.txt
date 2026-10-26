@@ -1,0 +1,1 @@
+Setting divert-keys of Signature M650 Mouse key NamedInt(83, 'Back Button') to NamedInt(2, 'Mouse Gestures')
