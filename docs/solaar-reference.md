@@ -48,6 +48,10 @@ Verified against Solaar master at commit `e7304c4` (2026-08-18), version string 
 - Built-in rule (Brightness Up/Down to `XF86_MonBrightness*` key taps) runs after user rules.
 - The 24 component types and the load/save code are the same in 1.1.14 and 1.1.20.
 - 1.1.15 renamed some keys to match Logitech names; rules using removed names silently get key 0.
+- `_save_config_rule_file(name)` saves only rules whose `source == name`, and `_load_rule_config` sets `source` to the path it loaded. Solaar always loads and saves the same path; tooling must do the same (Phase 1a finding).
+- Feature names (verified 2026-10-26): `Feature.data()` writes `str(SupportedFeature)`, which is the name with spaces (`THUMB WHEEL`). 1.1.14 loads with `SupportedFeature[feature]` (underscores only), so the spaced form becomes `None` and the rule never matches; a second save writes the literal `None`. 1.1.15 to 1.1.20 load with `feature.replace(" ", "_")` and accept both.
+- Broken YAML: `safe_load_all` raises partway through; Solaar catches it, logs an error, and keeps the rules parsed before the error. Its next save writes only those, dropping the rest.
+- The published rules example (docs/rules.md, both 1.1.14 and 1.1.20) is missing a `---` before `- Feature: CROWN`, so only 3 of its 6 rules load.
 
 ## Reload behavior
 

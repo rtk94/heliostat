@@ -23,7 +23,7 @@ Claude Code picks up `CLAUDE.md` automatically. When it stops at the checkpoint,
 | File | Phase | Before you start | Checkpoint (what you verify) |
 |---|---|---|---|
 | (done) | 0. Repo bootstrap | | Done from the planning chat |
-| `01a-conformance-harness.md` | 1a. Conformance harness | nothing | fetch output, dependency notes, conformance tests green |
+| `01a-conformance-harness.md` | 1a. Conformance harness (done) | nothing | fetch output, dependency notes, conformance tests green |
 | `01b-rules-model.md` | 1b. Rules model | 1a committed | `make test` and `make conformance` green; 1.1.14 vs 1.1.20 differences listed |
 | `02-solaar-adapter.md` | 2. Solaar adapter | **capture fixtures by hand (below)** | parser tests green; `heliostat debug-reload` run by hand |
 | `03-analysis-lint.md` | 3. Lint | 2 committed | `heliostat lint` against your real rules file |

@@ -18,12 +18,13 @@ Repo: github.com/rtk94/heliostat. App ID: io.github.rtk94.Heliostat. PyPI name: 
 - Every .py file starts with `# SPDX-License-Identifier: GPL-2.0-or-later`.
 - Before claiming something about Solaar's behavior, check it in Solaar's source (the pinned checkouts under `.solaar/` once Phase 1a exists), not from memory.
 - `make test` and `make lint` must pass before you report a phase done.
+- No AI attribution anywhere: no Co-Authored-By or similar trailers in commits, no "Generated with" lines in PRs, no AI credits in files. The only author and contributor is rtk94.
 
 ## Settled inputs
 
 - Standalone app plus a small upstream PR to Solaar adding a `reload-rules` remote command. Until a user's Solaar has it, Heliostat restarts Solaar after save.
 - License GPL-2.0-or-later.
-- Rules model: Heliostat owns a typed model of `rules.yaml`. Conformance tests prove pinned Solaar versions (1.1.14 and latest) load Heliostat's output identically, and that Heliostat's save is byte-identical to Solaar's own. Heliostat does not import Solaar at runtime.
+- Rules model: Heliostat owns a typed model of `rules.yaml`. Conformance tests prove every supported Solaar version (1.1.14 and 1.1.20) loads Heliostat's output as the rules Heliostat holds, and that Heliostat's formatting matches Solaar's own save except for the documented deviations (see "Key design rules"). Heliostat does not import Solaar at runtime.
 - UI: Qt 6 via PySide6 (Widgets, not QML).
 - Device data: shell out to the `solaar` CLI (`show`, `config`) and parse the text. Live button capture is out of v1.
 - Packaging: pip-installable `pyproject.toml` project, installed with pipx or a venv. Debian packaging later; Flatpak deferred.
@@ -63,7 +64,11 @@ tools/
 ## Key design rules
 
 - Model fidelity first. Parse with `yaml.safe_load_all` (the same loader Solaar uses) into typed components. Anything Heliostat doesn't recognize becomes a `Raw` component that serializes back unchanged. Keep scalar types exactly as loaded: a device serial like `12345678` loads as an int and must not be "fixed" into a string.
-- Serialize like Solaar. Mirror `diversion._save_config_rule_file`: `%YAML 1.3` header line when there are rules, `explicit_start` and `explicit_end`, `default_flow_style=False`, scalar-only lists in flow style, and single-scalar lists collapsed to the scalar. Target: for any input, Heliostat's save is byte-identical to Solaar's own save of the same rules.
+- Semantic conformance is the hard rule. Every supported Solaar version (1.1.14, 1.1.20) must load Heliostat's output as exactly the rules Heliostat holds. Heliostat never introduces a form that any supported version loads differently from another.
+- Serialize like Solaar, with documented deviations. Mirror `diversion._save_config_rule_file`: `%YAML 1.3` header line when there are rules, `explicit_start` and `explicit_end`, `default_flow_style=False`, scalar-only lists in flow style, and single-scalar lists collapsed to the scalar. Output matches Solaar's own save byte-for-byte except for these deviations (each one recorded in `docs/decisions.md` with its reason):
+  - D1, Feature names: a Feature argument is written exactly as loaded (`THUMB_WHEEL` or `THUMB WHEEL`), and Feature conditions Heliostat creates use underscores. Reason: Solaar's save writes the spaced form, which Solaar 1.1.14 cannot load (it becomes `None`; fixed in 1.1.15).
+- Existing problems are flagged, never silently fixed. If a loaded file already contains a form some supported Solaar misloads (a spaced Feature name, `Feature: None`), Heliostat preserves it on save and lint reports it with an explicit fix.
+- Broken YAML is read-only. If `rules.yaml` fails to parse anywhere, Heliostat refuses to edit or save it, reports the error location, and warns that Solaar is running only the rules before the error and will drop the rest on its next save.
 - No Solaar import at runtime. Solaar code only runs inside the conformance harness, in a subprocess with `XDG_CONFIG_HOME` pointed at a temp dir (the `diversion` module loads the user's rules file at import time).
 - One seam to Solaar. All CLI calls go through `SolaarClient`, so the GUI and lint layers test against `FakeSolaar`.
 - CLI text parsing is fragile. Parsers are built from captured real output, kept as fixtures per Solaar version. Unknown output fails loudly with the raw text attached; it never guesses.
