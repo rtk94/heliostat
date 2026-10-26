@@ -1,0 +1,16 @@
+%YAML 1.3
+# Valid YAML that makes Solaar's load raise partway through. Solaar logs an error, keeps the rules
+# before the failing one (1 of 3 here) and drops the rest on its next save. MouseScroll calls len()
+# on its argument, so a bare number raises TypeError.
+---
+- Key: [Back Button, pressed]
+- KeyPress: [[XF86_AudioMute], click]
+...
+---
+- Key: [Forward Button, pressed]
+- MouseScroll: 5
+...
+---
+- Key: [Smart Shift, pressed]
+- KeyPress: [[XF86_AudioPlay], click]
+...

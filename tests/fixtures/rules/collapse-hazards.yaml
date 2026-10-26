@@ -1,0 +1,17 @@
+%YAML 1.3
+# One-scalar lists where Solaar's own save changes the meaning: its convert() collapses [x] to x
+# even for components that do not treat the two alike. Heliostat keeps these lists.
+---
+# Device [x] never matches (devID is a list); Solaar saves Device: x, which matches.
+- Device: [MX Master 3]
+# The setting value [1600] becomes 1600.
+- Set: [null, dpi, [1600]]
+# Loads (warning, no test function); Solaar saves TestBytes: 1, and its next save then crashes in
+# TestBytes.data() (1[:]).
+- TestBytes: [1]
+# An all-integer Test loads as TestBytes [5]; Solaar saves TestBytes: 5, same crash as above.
+- Test: [5]
+# Execute [5] runs [5]; Solaar saves Execute: 5, and its next load raises TypeError (Execute builds a
+# generator over the argument), dropping this rule and every rule after it.
+- Execute: [5]
+...

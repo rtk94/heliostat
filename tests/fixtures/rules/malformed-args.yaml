@@ -1,0 +1,23 @@
+%YAML 1.3
+# Known component types with arguments Solaar loads only with warnings, substituting a fallback.
+# Solaar's save writes the fallback ('0', -1, 'False', [0, 0], null, ...); Heliostat keeps each
+# argument as written (typed where the shape is valid, Raw otherwise) and never collapses a Raw list.
+---
+- Key: Not A Real Key
+- Key: [Back Button, down]
+- Key: [Back Button, pressed, extra]
+- KeyIsDown: [Back Button]
+- Modifiers: [Shift, Hyper]
+- Report: x
+- Test: [nonsense]
+...
+---
+- Process: 42
+- Process: [firefox]
+- Execute: [notify-send, 5]
+- MouseScroll: [1]
+- MouseClick: [5]
+- TestBytes: [0, 1]
+- Later: [500, KeyPress: a]
+- Later: [soon]
+...

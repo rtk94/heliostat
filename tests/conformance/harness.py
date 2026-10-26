@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Run tests/conformance/solaar_runner.py against a pinned Solaar checkout in a subprocess."""
 
+import json
 import os
 import shutil
 import subprocess
@@ -56,6 +57,24 @@ def run_runner(tag: str, *args: str) -> subprocess.CompletedProcess:
             text=True,
             timeout=60,
         )
+
+
+def solaar_dump_data(tag: str, path: Path, *, load_error: bool = False) -> list:
+    """Return Solaar <tag>'s data() for each user rule loaded from path, as parsed JSON.
+
+    With load_error=True, require that Solaar's load failed partway (it logs the error and keeps the
+    rules before it) and return the rules it kept.
+    """
+    result = run_runner(tag, "dump-data", str(path))
+    if load_error:
+        assert result.returncode == 1 and "failed to load" in result.stderr, (
+            f"expected Solaar {tag} to fail partway through loading {path.name}:\n{result.stderr}"
+        )
+    else:
+        assert result.returncode == 0, (
+            f"Solaar {tag} dump-data of {path.name} failed (exit {result.returncode}):\n{result.stderr}"
+        )
+    return json.loads(result.stdout)
 
 
 def solaar_roundtrip(tag: str, in_path: Path, out_path: Path) -> bytes:

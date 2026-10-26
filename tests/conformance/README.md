@@ -24,6 +24,17 @@ make conformance          # tools/fetch_solaar.sh, then pytest -m conformance
 - `harness.py` builds the subprocess environment (`run_runner`, `solaar_roundtrip`) for tests.
 - `test_solaar_fixed_point.py`: for each tag and each `tests/fixtures/rules/*.yaml`, round-trip twice and
   require the second output to be byte-identical to the first.
+- `test_rules_model.py` (Phase 1b), for each tag and each fixture that parses:
+  - `dump-data` of Heliostat's `dumps` output equals `dump-data` of the original (the hard rule), including
+    forms a tag misloads (`MISLOADS`) and files whose load Solaar aborts partway (`LOAD_ABORTS`).
+  - On a file Solaar saved itself (argument shapes already as `data()` writes them), Heliostat's `dumps`
+    equals Solaar's next save byte for byte, up to `deviations.DEVIATIONS`. Fixtures as written are not
+    byte-compared (D2: Heliostat keeps argument shapes that Solaar's save rewrites); they are covered by the
+    semantic test and by `tests/test_rulesfile.py` (idempotence plus `deviations.d2_shape_differences`).
+- `test_property.py`: hypothesis-generated rule trees (shorthand and canonical argument shapes), dumped by
+  Heliostat; Solaar must load them as Heliostat holds them, and for canonical shapes Solaar's save must equal
+  `dumps` up to the deviations. About 25 s.
+- `deviations.py`: the documented differences from Solaar's save (D1, D2; see `docs/decisions.md`).
 
 ### How `roundtrip` loads and saves
 
@@ -83,6 +94,16 @@ runner's stderr. Only ERRORs make it exit non-zero.
   `.solaar/1.1.14/lib/logitech_receiver/diversion.py`. Control names are ones present in both tags'
   `special_keys.CONTROL`.
 - `feature-names.yaml`: `Feature` with underscore and space spellings (see below). Strict xfail on 1.1.14.
+- `argument-forms.yaml`: argument shapes Solaar accepts in more than one form (`Key: [x]`, `Key: Back_Button`,
+  `KeyPress: [a, b]`, `Not: {..}`, `MouseScroll: [[0, 1]]`, `Later: 3`, ...) and scalars whose YAML type
+  matters (quoted digits, floats, booleans).
+- `malformed-args.yaml`: known component types with arguments Solaar loads only with a warning and a fallback
+  value (`Key: Not A Real Key` saves as `'0'`, `Report: x` as `-1`, `Later: [500, ...]` as `0`, ...).
+- `collapse-hazards.yaml`: one-scalar lists where Solaar's own save changes the meaning (`Device: [x]`,
+  `Set: [.., [1600]]`) or writes a file its next save or load breaks on (`TestBytes: [1]`, `Test: [5]`,
+  `Execute: [5]`). Strict xfail on both tags.
+- `load-aborts.yaml`: valid YAML whose second rule (`MouseScroll: 5`) makes Solaar's load raise; Solaar keeps
+  1 of 3 rules. Strict xfail on both tags.
 
 ## Known Solaar behavior the fixtures pin down
 

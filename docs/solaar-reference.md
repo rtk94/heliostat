@@ -52,6 +52,10 @@ Verified against Solaar master at commit `e7304c4` (2026-08-18), version string 
 - Feature names (verified 2026-10-26): `Feature.data()` writes `str(SupportedFeature)`, which is the name with spaces (`THUMB WHEEL`). 1.1.14 loads with `SupportedFeature[feature]` (underscores only), so the spaced form becomes `None` and the rule never matches; a second save writes the literal `None`. 1.1.15 to 1.1.20 load with `feature.replace(" ", "_")` and accept both.
 - Broken YAML: `safe_load_all` raises partway through; Solaar catches it, logs an error, and keeps the rules parsed before the error. Its next save writes only those, dropping the rest.
 - The published rules example (docs/rules.md, both 1.1.14 and 1.1.20) is missing a `---` before `- Feature: CROWN`, so only 3 of its 6 rules load.
+- Save rewrites argument shapes, not just formatting (verified 2026-10-26 against both pinned tags). It saves each component's `data()`, which normalizes: `Key: x` / `Key: [x]` -> `[x, pressed]`; `KeyPress: a` / `[a, b]` / `[a, depress]` -> `[[a, ...], action]` (written as a block list); `MouseClick: b` -> `[b, 1]`; `Not: [c]` -> `Not: c`; `MouseScroll: [[x, y]]` -> `[x, y]`; `Test: [t, null]` -> `t`; `Key: Back_Button` -> `Back Button`; `Process: 42` -> `'42'`. Invalid arguments are replaced by the fallback the constructor picked: unknown Key or KeyIsDown name -> `'0'`, unknown modifier dropped, unknown Test name -> `'False'`, non-int Report -> `-1`, out-of-range Later -> `Later: 0` (its actions dropped), bad MouseScroll -> `[0, 0]`, unknown MouseClick button -> `null`.
+- Save's `convert()` collapses every one-scalar list, including for components that do not accept the scalar alike: `Device: [x]` (never matches) saves as `Device: x` (matches); `Set: [.., [1600]]` saves the value as `1600`; `TestBytes: [1]` and `Test: [5]` save as `TestBytes: 1` / `5`, which the next save crashes on (`self.test[:]`); `Execute: [5]` saves as `Execute: 5`, which the next load raises on.
+- Load aborts on some valid YAML: a component constructor that raises ends `_load_rule_config` the same way a YAML error does (error logged, earlier rules kept, the rest dropped). Seen with `MouseScroll: 5`, `MouseClick: 5`, `Feature: [CROWN]`, `Rule: 5`, `Execute: 5`, `Test: mouse-up` (the deprecated mouse-movement tests index `MOUSE_GESTURE_TESTS[0]` and raise `KeyError`) and an empty (null) document.
+- An unknown component type loads as a plain `Condition` (warning only, always false), but `Condition` has no `data()`, so any save of such a file raises `AttributeError` outside the `try` and writes nothing. A document that is a mapping instead of a list does the same.
 
 ## Reload behavior
 
@@ -64,6 +68,7 @@ Verified against Solaar master at commit `e7304c4` (2026-08-18), version string 
 - A rule is a sequence of components: sub-rules, conditions, actions.
 - Components evaluate in order. A false condition stops the rule. If the last thing a rule does is execute an action, no further rules are processed for that notification.
 - `Or` short-circuits on true; `And` evaluates like a rule; `Not` negates.
+- `Device` condition: 1.1.14 matches the device's unit ID or serial; 1.1.20 also matches its codename or name. This is an evaluation-only difference; load, save and `data()` are the same.
 - Rules only fire on HID++ notifications. A key, button, wheel, or crown must be diverted first or nothing fires.
 
 ## Component types

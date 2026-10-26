@@ -1,0 +1,47 @@
+%YAML 1.3
+# Argument shapes Solaar accepts in more than one form, plus scalars whose YAML type matters.
+# Solaar's save rewrites each shape to what the component's data() returns; Heliostat keeps it.
+# Checked against .solaar/1.1.14/lib/logitech_receiver/diversion.py (same code in 1.1.20).
+---
+- Key: [Back Button]
+- Key: Back_Button
+- KeyPress: [Control_L, Tab]
+- KeyPress: [Super_L, depress]
+- KeyPress: [[Control_L, Tab], click]
+...
+---
+- MouseGesture: [Mouse Up]
+- Not: {Key: [Forward Button, released]}
+- Test: [thumb_wheel_up]
+- Test: [crown_tap, null]
+- MouseClick: [left]
+- MouseClick: [right, depress]
+- MouseScroll: [[0, 1]]
+- Execute: [xflock4]
+...
+---
+- Modifiers: []
+- Rule: []
+- Later: [2]
+- Later: 3
+- Later: [0.25, KeyPress: a]
+...
+---
+# One-item lists that Solaar reads exactly like the bare scalar, so its save's collapse would be
+# harmless. Heliostat still keeps them as lists (D2).
+- Key: [Smart Shift]
+- Modifiers: [Super]
+- MouseGesture: [Mouse Down]
+- Later: [5, KeyPress: [XF86_AudioMute]]
+- Execute: [xflock4]
+...
+---
+# Quoted digits stay strings; bare digits stay ints; floats and booleans stay as typed.
+- Active: '12345678'
+- Device: 12345678
+- Host: '1.5'
+- Process: 'true'
+- Setting: [null, hires-smooth-invert, false]
+- Set: [12345678, dpi, 1600.0]
+- Set: ['12345678', smart-shift, 20]
+...

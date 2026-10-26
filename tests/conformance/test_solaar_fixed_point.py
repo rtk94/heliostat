@@ -18,6 +18,10 @@ KNOWN_FAILURES = {
         "1.1.14 saves Feature names with spaces (str(SupportedFeature)) but loads only the underscore "
         "spelling, so THUMB_WHEEL -> 'THUMB WHEEL' -> None"
     ),
+    ("collapse-hazards.yaml", None): (
+        "Solaar's save collapses TestBytes [1] to TestBytes: 1, and the next save crashes in TestBytes.data()"
+    ),
+    ("load-aborts.yaml", None): "MouseScroll: 5 makes Solaar's load raise; it logs the error and keeps 1 of 3 rules",
 }
 
 
