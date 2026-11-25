@@ -19,3 +19,6 @@ htmlcov/
 # Editors
 .idea/
 .vscode/
+
+# AI tooling (local only)
+prompts/
